@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cloud File Uploader</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>☁️ Cloud File Uploader</h1>
+        
+        <!-- File Selection Area -->
+        <div class="upload-area" id="uploadArea">
+            <p class="main-text">Select a file to upload</p>
+            <button class="browse-btn" onclick="document.getElementById('fileInput').click()">
+                Choose File
+            </button>
+            <input type="file" id="fileInput" hidden accept=".jpg,.jpeg,.png,.gif,.pdf,.txt">
+            <p class="info-text">Supported: JPG, PNG, GIF, PDF, TXT (Max 10MB)</p>
+        </div>
+        
+        <!-- File Preview -->
+        <div id="filePreview" class="file-preview" style="display: none;">
+            <p>Selected File:</p>
+            <div class="file-details">
+                <span id="fileName"></span>
+                <span id="fileSize"></span>
+            </div>
+            <div class="buttons">
+                <button id="uploadBtn" class="upload-btn">Upload File</button>
+                <button id="cancelBtn" class="cancel-btn">Cancel</button>
+            </div>
+        </div>
+        
+        <!-- Progress Bar -->
+        <div id="progressBar" class="progress-bar" style="display: none;">
+            <p>Uploading...</p>
+            <div class="progress-container">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+        </div>
+        
+        <!-- Success Message -->
+        <div id="result" class="result" style="display: none;">
+            <h3>✅ Upload Successful!</h3>
+            <p>Your file has been uploaded to cloud storage.</p>
+            <input type="text" id="fileUrl" readonly placeholder="File URL">
+            <button onclick="copyUrl()" class="copy-btn">Copy URL</button>
+            <button onclick="resetUploader()" class="reset-btn">Upload Another File</button>
+        </div>
+        
+        <!-- Error Message -->
+        <div id="error" class="error" style="display: none;">
+            <h3>❌ Upload Failed</h3>
+            <p id="errorMessage"></p>
+            <button onclick="resetUploader()" class="reset-btn">Try Again</button>
+        </div>
+    </div>
+    
+    <script src="script.js"></script>
+</body>
+</html>

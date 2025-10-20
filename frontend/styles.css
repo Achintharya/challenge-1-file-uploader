@@ -1,0 +1,236 @@
+/* Simple CSS for File Uploader */
+
+/* Reset default styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* Body styling */
+body {
+    font-family: Arial, sans-serif;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+}
+
+/* Main container */
+.container {
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    padding: 40px;
+    max-width: 500px;
+    width: 100%;
+}
+
+/* Title */
+h1 {
+    text-align: center;
+    color: #333;
+    margin-bottom: 30px;
+}
+
+/* Upload area */
+.upload-area {
+    border: 2px dashed #ccc;
+    border-radius: 10px;
+    padding: 40px;
+    text-align: center;
+}
+
+.upload-area:hover {
+    border-color: #667eea;
+    background: #f8f9fa;
+}
+
+.main-text {
+    font-size: 18px;
+    color: #333;
+    margin-bottom: 20px;
+}
+
+.info-text {
+    font-size: 14px;
+    color: #666;
+    margin-top: 20px;
+}
+
+/* Buttons */
+.browse-btn, .upload-btn, .cancel-btn, .copy-btn, .reset-btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    margin: 5px;
+}
+
+.browse-btn {
+    background: #667eea;
+    color: white;
+}
+
+.browse-btn:hover {
+    background: #5a67d8;
+}
+
+.upload-btn {
+    background: #48bb78;
+    color: white;
+}
+
+.upload-btn:hover {
+    background: #38a169;
+}
+
+.cancel-btn {
+    background: #f56565;
+    color: white;
+}
+
+.cancel-btn:hover {
+    background: #e53e3e;
+}
+
+.copy-btn {
+    background: #667eea;
+    color: white;
+}
+
+.copy-btn:hover {
+    background: #5a67d8;
+}
+
+.reset-btn {
+    background: #667eea;
+    color: white;
+    display: block;
+    width: 100%;
+    margin-top: 15px;
+}
+
+.reset-btn:hover {
+    background: #5a67d8;
+}
+
+/* File preview section */
+.file-preview {
+    margin-top: 20px;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 5px;
+}
+
+.file-preview p {
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+.file-details {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    padding: 10px;
+    background: white;
+    border-radius: 5px;
+}
+
+.buttons {
+    text-align: center;
+}
+
+/* Progress bar */
+.progress-bar {
+    margin-top: 20px;
+    text-align: center;
+}
+
+.progress-bar p {
+    margin-bottom: 10px;
+    font-weight: bold;
+}
+
+.progress-container {
+    height: 20px;
+    background: #e2e8f0;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #667eea, #764ba2);
+    width: 0%;
+    transition: width 0.3s ease;
+}
+
+/* Result section */
+.result {
+    margin-top: 20px;
+    padding: 20px;
+    background: #f0fdf4;
+    border: 1px solid #86efac;
+    border-radius: 5px;
+    text-align: center;
+}
+
+.result h3 {
+    color: #16a34a;
+    margin-bottom: 10px;
+}
+
+.result p {
+    margin-bottom: 15px;
+}
+
+.result input {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+/* Error section */
+.error {
+    margin-top: 20px;
+    padding: 20px;
+    background: #fef2f2;
+    border: 1px solid #fca5a5;
+    border-radius: 5px;
+    text-align: center;
+}
+
+.error h3 {
+    color: #dc2626;
+    margin-bottom: 10px;
+}
+
+.error p {
+    margin-bottom: 15px;
+}
+
+/* Mobile responsive */
+@media (max-width: 480px) {
+    .container {
+        padding: 20px;
+    }
+    
+    h1 {
+        font-size: 24px;
+    }
+    
+    .upload-area {
+        padding: 20px;
+    }
+    
+    .browse-btn, .upload-btn, .cancel-btn, .copy-btn, .reset-btn {
+        font-size: 14px;
+        padding: 8px 16px;
+    }
+}
