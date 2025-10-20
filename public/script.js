@@ -1,6 +1,6 @@
 // Simple File Upload Script
 // Configuration
-const BACKEND_URL = 'http://localhost:3000'; // Update with your backend URL
+const BACKEND_URL = '/api'; // Vercel API endpoint
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB in bytes
 
 // Global variable to store selected file
