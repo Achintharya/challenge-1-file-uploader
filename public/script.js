@@ -94,19 +94,37 @@ function uploadFile() {
         body: formData
     })
     .then(response => {
-        if (response.ok) {
-            return response.json();
-        } else {
-            throw new Error('Upload failed');
-        }
+        // Log the response for debugging
+        console.log('Response status:', response.status);
+        
+        // Parse JSON regardless of status to see the actual response
+        return response.json().then(data => {
+            // Log the actual response data
+            console.log('Response data:', data);
+            
+            if (response.ok && data.success) {
+                return data;
+            } else {
+                throw new Error(data.error || 'Upload failed');
+            }
+        });
     })
     .then(data => {
         // Upload successful
-        showSuccess(data.url);
+        console.log('Upload successful! Data:', data);
+        
+        // Make sure we have the URL
+        if (data.url) {
+            showSuccess(data.url);
+        } else {
+            // If no URL, show error with debug info
+            showError('Upload completed but no URL returned. Check console for details.');
+            console.error('No URL in response:', data);
+        }
     })
     .catch(err => {
         // Upload failed
-        showError('Upload failed. Please try again.');
+        showError('Upload failed: ' + err.message);
         console.error('Upload error:', err);
     });
     
@@ -132,8 +150,15 @@ function showSuccess(url) {
     // Hide all other sections
     hideAll();
     
-    // Show success message
-    fileUrl.value = url || 'File uploaded successfully';
+    // Show success message with the actual URL
+    if (url && url.startsWith('http')) {
+        fileUrl.value = url;
+        console.log('S3 URL:', url);
+    } else {
+        fileUrl.value = 'Error: Invalid URL returned';
+        console.error('Invalid URL:', url);
+    }
+    
     result.style.display = 'block';
     
     // Complete progress bar
