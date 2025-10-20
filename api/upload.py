@@ -1,15 +1,15 @@
 """
 Vercel Serverless Function for File Upload to AWS S3
-Full implementation with S3 upload
+Fixed multipart handling
 """
 
 from http.server import BaseHTTPRequestHandler
 import json
 import os
-import cgi
-import io
 import boto3
 from botocore.exceptions import ClientError
+import cgi
+import io
 
 class handler(BaseHTTPRequestHandler):
     def do_OPTIONS(self):
@@ -23,6 +23,12 @@ class handler(BaseHTTPRequestHandler):
 
     def do_POST(self):
         """Handle file upload POST request"""
+        # Set CORS headers
+        self.send_response(200)
+        self.send_header('Content-Type', 'application/json')
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.end_headers()
+        
         try:
             # Get environment variables
             AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID')
@@ -30,133 +36,110 @@ class handler(BaseHTTPRequestHandler):
             AWS_REGION = os.environ.get('AWS_REGION', 'us-east-1')
             S3_BUCKET = os.environ.get('S3_BUCKET')
             
-            # Check environment variables
-            if not all([AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, S3_BUCKET]):
-                self.send_error_response(500, 'Missing environment variables', {
-                    'missing': [
-                        k for k in ['AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY', 'S3_BUCKET']
-                        if not os.environ.get(k)
-                    ]
-                })
-                return
-            
-            # Parse multipart form data
+            # Parse the multipart form data
             content_type = self.headers.get('Content-Type')
-            if not content_type or 'multipart/form-data' not in content_type:
-                self.send_error_response(400, 'Content-Type must be multipart/form-data')
-                return
             
-            # Parse the form data
+            # Create a cgi.FieldStorage object to parse multipart data
             form = cgi.FieldStorage(
                 fp=self.rfile,
                 headers=self.headers,
-                environ={
-                    'REQUEST_METHOD': 'POST',
-                    'CONTENT_TYPE': self.headers['Content-Type'],
-                }
+                environ={'REQUEST_METHOD': 'POST', 'CONTENT_TYPE': content_type}
             )
             
-            # Get the file
+            # Get the uploaded file
             if 'file' not in form:
-                self.send_error_response(400, 'No file provided')
+                error_response = {'error': 'No file in request', 'success': False}
+                self.wfile.write(json.dumps(error_response).encode())
                 return
             
             file_item = form['file']
             
-            # Check if file was uploaded
+            # Check if file is present
             if not file_item.filename:
-                self.send_error_response(400, 'No file selected')
+                error_response = {'error': 'No file selected', 'success': False}
+                self.wfile.write(json.dumps(error_response).encode())
                 return
             
-            # Get filename and validate extension
+            # Get file details
             filename = file_item.filename
-            ALLOWED_EXTENSIONS = {'jpg', 'jpeg', 'png', 'gif', 'pdf', 'txt'}
-            
-            if '.' not in filename or filename.rsplit('.', 1)[1].lower() not in ALLOWED_EXTENSIONS:
-                self.send_error_response(400, f'File type not allowed. Allowed: {", ".join(ALLOWED_EXTENSIONS)}')
-                return
-            
-            # Read file data
             file_data = file_item.file.read()
+            
+            # Validate file extension
+            ALLOWED_EXTENSIONS = {'jpg', 'jpeg', 'png', 'gif', 'pdf', 'txt'}
+            if '.' in filename:
+                ext = filename.rsplit('.', 1)[1].lower()
+                if ext not in ALLOWED_EXTENSIONS:
+                    error_response = {
+                        'error': f'File type .{ext} not allowed',
+                        'allowed': list(ALLOWED_EXTENSIONS),
+                        'success': False
+                    }
+                    self.wfile.write(json.dumps(error_response).encode())
+                    return
             
             # Check file size (10MB max)
             if len(file_data) > 10 * 1024 * 1024:
-                self.send_error_response(400, f'File too large. Max 10MB, got {len(file_data) / (1024*1024):.2f}MB')
+                error_response = {
+                    'error': 'File too large',
+                    'max_size': '10MB',
+                    'file_size': f'{len(file_data) / (1024*1024):.2f}MB',
+                    'success': False
+                }
+                self.wfile.write(json.dumps(error_response).encode())
                 return
             
             # Create S3 client
-            try:
-                s3 = boto3.client(
-                    's3',
-                    aws_access_key_id=AWS_ACCESS_KEY_ID,
-                    aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
-                    region_name=AWS_REGION
-                )
-            except Exception as e:
-                self.send_error_response(500, f'Failed to create S3 client: {str(e)}')
-                return
+            s3 = boto3.client(
+                's3',
+                aws_access_key_id=AWS_ACCESS_KEY_ID,
+                aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
+                region_name=AWS_REGION
+            )
+            
+            # Make filename safe and unique
+            import time
+            safe_filename = f"{int(time.time())}_{filename.replace(' ', '_')}"
             
             # Upload to S3
             try:
-                # Use a simple filename (you might want to add timestamp or UUID for uniqueness)
-                safe_filename = filename.replace(' ', '_')
-                
                 s3.put_object(
                     Bucket=S3_BUCKET,
                     Key=safe_filename,
                     Body=file_data,
                     ACL='public-read',
-                    ContentType=file_item.type or 'application/octet-stream'
+                    ContentType=file_item.type if hasattr(file_item, 'type') else 'application/octet-stream'
                 )
                 
-                # Generate public URL (use correct region from environment)
+                # Generate public URL
                 file_url = f"https://{S3_BUCKET}.s3.{AWS_REGION}.amazonaws.com/{safe_filename}"
                 
-                # Send success response
-                self.send_response(200)
-                self.send_header('Content-Type', 'application/json')
-                self.send_header('Access-Control-Allow-Origin', '*')
-                self.end_headers()
-                
+                # Success response
                 response = {
                     'success': True,
                     'url': file_url,
                     'filename': safe_filename,
-                    'size': len(file_data),
-                    'bucket': S3_BUCKET
+                    'original_name': filename,
+                    'size': len(file_data)
                 }
                 
                 self.wfile.write(json.dumps(response).encode())
                 
             except ClientError as e:
-                error_code = e.response['Error']['Code']
-                self.send_error_response(500, f'S3 upload failed: {error_code}', {
-                    'error_code': error_code,
-                    'bucket': S3_BUCKET,
-                    'region': AWS_REGION
-                })
-            except Exception as e:
-                self.send_error_response(500, f'Upload error: {str(e)}')
+                error_response = {
+                    'error': 'S3 upload failed',
+                    'details': str(e),
+                    'success': False
+                }
+                self.wfile.write(json.dumps(error_response).encode())
                 
         except Exception as e:
-            self.send_error_response(500, f'Server error: {str(e)}')
-    
-    def send_error_response(self, status_code, message, details=None):
-        """Helper to send error responses"""
-        self.send_response(status_code)
-        self.send_header('Content-Type', 'application/json')
-        self.send_header('Access-Control-Allow-Origin', '*')
-        self.end_headers()
-        
-        error_response = {
-            'error': message,
-            'success': False
-        }
-        
-        if details:
-            error_response['details'] = details
-        
-        self.wfile.write(json.dumps(error_response).encode())
+            error_response = {
+                'error': 'Server error',
+                'message': str(e),
+                'type': type(e).__name__,
+                'success': False
+            }
+            self.wfile.write(json.dumps(error_response).encode())
     
     def do_GET(self):
         """Handle GET request for testing"""
@@ -166,15 +149,12 @@ class handler(BaseHTTPRequestHandler):
         self.end_headers()
         
         response = {
-            'status': 'API is running',
+            'status': 'Upload API is running',
             'method': 'Use POST with multipart/form-data to upload files',
             'endpoint': '/api/upload',
-            'environment': {
-                'AWS_KEY_SET': bool(os.environ.get('AWS_ACCESS_KEY_ID')),
-                'AWS_SECRET_SET': bool(os.environ.get('AWS_SECRET_ACCESS_KEY')),
-                'S3_BUCKET_SET': bool(os.environ.get('S3_BUCKET')),
-                'AWS_REGION': os.environ.get('AWS_REGION', 'us-east-1')
-            }
+            'test_endpoint': '/api/test-upload',
+            'allowed_types': ['jpg', 'jpeg', 'png', 'gif', 'pdf', 'txt'],
+            'max_size': '10MB'
         }
         
         self.wfile.write(json.dumps(response).encode())
