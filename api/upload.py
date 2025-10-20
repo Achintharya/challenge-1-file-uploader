@@ -109,7 +109,7 @@ class handler(BaseHTTPRequestHandler):
                     ContentType=file_item.type or 'application/octet-stream'
                 )
                 
-                # Generate public URL
+                # Generate public URL (use correct region from environment)
                 file_url = f"https://{S3_BUCKET}.s3.{AWS_REGION}.amazonaws.com/{safe_filename}"
                 
                 # Send success response
